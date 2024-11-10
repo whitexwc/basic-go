@@ -1,10 +1,11 @@
 package main
 
 import (
+	"github.com/gin-contrib/sessions/redis"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-contrib/sessions"
 	"github.com/whitexwc/basic-go/webook/internal/repository"
 	"github.com/whitexwc/basic-go/webook/internal/repository/dao"
 	"github.com/whitexwc/basic-go/webook/internal/service"
@@ -46,9 +47,18 @@ func initServer() *gin.Engine {
 		MaxAge: 12 * time.Hour,
 	}))
 
-	store := sessions.NewCookieStore([]byte("secret"))
+	// 步骤1
+	//store := cookie.NewStore([]byte("secret"))
+	//store := memstore.NewStore([]byte("BXRuAoqzeb4Tn6VjF1qcoUgntV0VEwq2"),
+	//	[]byte("7BS1f8ZqOaPuo7IBo3gJtOQzhh2P3NMX"))
+	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
+		[]byte("BXRuAoqzeb4Tn6VjF1qcoUgntV0VEwq2"), []byte("7BS1f8ZqOaPuo7IBo3gJtOQzhh2P3NMX"))
+	if err != nil {
+		panic(err)
+	}
 	server.Use(sessions.Sessions("mysession", store))
 
+	// 步骤3
 	server.Use(middleware.NewLoginMiddlewareBuilder().
 		IgnorePaths("/users/signup").IgnorePaths("/users/login").
 		IgnorePaths("/users/profile").IgnorePaths("/users/edit").Build())

@@ -137,8 +137,26 @@ func (u *UserHandler) Login(c *gin.Context) {
 	sess := sessions.Default(c)
 	// 可以随便设置值
 	sess.Set("userId", du.Id)
+	// option 实际是控制的cookie
+	sess.Options(sessions.Options{
+		//Secure: true,
+		//HttpOnly: true,
+		MaxAge: 30, //退出登陆
+	})
 	sess.Save()
 	c.String(http.StatusOK, "登陆成功")
+}
+
+func (u *UserHandler) Logout(ctx *gin.Context) {
+	sess := sessions.Default(ctx)
+	// option 实际是控制的cookie
+	sess.Options(sessions.Options{
+		//Secure: true,
+		//HttpOnly: true,
+		MaxAge: -1, //退出登陆
+	})
+	sess.Save()
+	ctx.String(http.StatusOK, "退出登陆成功")
 }
 
 func (u *UserHandler) Edit(c *gin.Context) {
