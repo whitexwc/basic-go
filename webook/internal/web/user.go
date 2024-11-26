@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-contrib/sessions"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/whitexwc/basic-go/webook/internal/domain"
 	"github.com/whitexwc/basic-go/webook/internal/service"
 
@@ -43,11 +44,13 @@ func (u *UserHandler) RegisterRoutes(server *gin.Engine) {
 	{
 		ug.POST("/signup", u.SignUp)
 
-		ug.POST("/login", u.Login)
+		//ug.POST("/login", u.Login)
+		ug.POST("/login", u.LoginJWT)
 
 		ug.POST("/edit", u.Edit)
 
-		ug.GET("/profile", u.Profile)
+		//ug.GET("/profile", u.Profile)
+		ug.GET("/profile", u.ProfileJWT)
 	}
 
 }
@@ -107,6 +110,52 @@ func (u *UserHandler) SignUp(c *gin.Context) {
 
 	c.String(http.StatusOK, "注册成功")
 	fmt.Printf("%v", req)
+}
+
+func (u *UserHandler) LoginJWT(c *gin.Context) {
+	type LoginReq struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	var req LoginReq
+	if err := c.Bind(&req); err != nil {
+		return
+	}
+	du, err := u.svc.Login(c, req.Email, req.Password)
+	if err == service.ErrInvalidUserOrPassword {
+		c.String(http.StatusOK, "用户名或密码错误")
+		return
+	}
+	if err == service.ErrUserNotFound {
+		c.String(http.StatusOK, "用户不存在")
+		return
+	}
+	if err != nil {
+		c.String(http.StatusOK, "系统错误")
+		return
+	}
+	// 在这里登陆成功了
+	// 在这里使用 JWT 设置登陆态
+	// 生成 JWT token
+	claims := UserClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			// 设置过期时间
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
+		},
+		Uid: du.Id,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
+	//token := jwt.New(jwt.SigningMethodHS512)
+	tokenStr, err := token.SignedString([]byte("BXRuAoqzeb4Tn6VjF1qcoUgntV0VEwq2"))
+	if err != nil {
+		c.String(http.StatusInternalServerError, "系统错误")
+		return
+	}
+	c.Header("x-jwt-token", tokenStr)
+	fmt.Println(tokenStr)
+	fmt.Println(du)
+	c.String(http.StatusOK, "登陆成功")
 }
 
 func (u *UserHandler) Login(c *gin.Context) {
@@ -217,8 +266,26 @@ func (u *UserHandler) Edit(c *gin.Context) {
 	// 返回更新成功的结果
 	c.String(http.StatusOK, "更新成功")
 }
+func (u *UserHandler) ProfileJWT(c *gin.Context) {
+	// todo: 获取登陆态才能看到profile
+	claim, ok := c.Get("claims")
+	if !ok {
+		// 可以考虑监控住这里
+		c.String(http.StatusOK, "系统错误")
+		return
+	}
+	claims, ok := claim.(*UserClaims)
+	if !ok {
+		// 可以考虑监控住这里
+		c.String(http.StatusOK, "系统错误")
+		return
+	}
+	c.String(http.StatusOK, "这是你的JWT profile"+string(claims.Uid))
+}
 
 func (u *UserHandler) Profile(c *gin.Context) {
+	// todo: 获取登陆态才能看到profile
+	// 先要通过 session 或者jwt拿到数据，验证是否有登陆
 	userId := c.Query("id")
 	if userId == "" {
 		c.String(http.StatusOK, "用户id为空")
@@ -245,4 +312,10 @@ func (u *UserHandler) Profile(c *gin.Context) {
 		"Birthday": du.Birthday,
 		"AboutMe":  du.AboutMe,
 	})
+}
+
+type UserClaims struct {
+	jwt.RegisteredClaims
+	// 声明自己要放进token里面的数据
+	Uid int64
 }
