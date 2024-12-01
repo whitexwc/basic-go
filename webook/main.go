@@ -1,15 +1,11 @@
 package main
 
 import (
-	"github.com/gin-contrib/sessions/memstore"
-	"github.com/redis/go-redis/v9"
 	"github.com/whitexwc/basic-go/webook/config"
-	ratelimit "github.com/whitexwc/basic-go/webook/internal/pkg/ginx/middlewares"
 	"github.com/whitexwc/basic-go/webook/internal/web/middleware"
 	"strings"
 	"time"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/whitexwc/basic-go/webook/internal/repository"
 	"github.com/whitexwc/basic-go/webook/internal/repository/dao"
 	"github.com/whitexwc/basic-go/webook/internal/service"
@@ -35,10 +31,10 @@ func main() {
 func initServer() *gin.Engine {
 	server := gin.Default()
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: config.Config.Redis.Addr,
-	})
-	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
+	//redisClient := redis.NewClient(&redis.Options{
+	//	Addr: config.Config.Redis.Addr,
+	//})
+	//server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
 	server.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"http://localhost:3000"},
 		AllowMethods: []string{"POST", "GET"},
@@ -68,8 +64,8 @@ func initServer() *gin.Engine {
 	//	panic(err)
 	//}
 
-	store := memstore.NewStore([]byte("BXRuAoqzeb4Tn6VjF1qcoUgntV0VEwq2"), []byte("7BS1f8ZqOaPuo7IBo3gJtOQzhh2P3NMX"))
-	server.Use(sessions.Sessions("mysession", store))
+	//store := memstore.NewStore([]byte("BXRuAoqzeb4Tn6VjF1qcoUgntV0VEwq2"), []byte("7BS1f8ZqOaPuo7IBo3gJtOQzhh2P3NMX"))
+	//server.Use(sessions.Sessions("mysession", store))
 	// 步骤3
 	//server.Use(middleware.NewLoginMiddlewareBuilder().
 	//	IgnorePaths("/users/signup").IgnorePaths("/users/login").

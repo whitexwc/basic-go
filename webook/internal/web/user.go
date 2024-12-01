@@ -141,7 +141,7 @@ func (u *UserHandler) LoginJWT(c *gin.Context) {
 	claims := UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			// 设置过期时间
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Minute)),
 		},
 		Uid: du.Id,
 	}

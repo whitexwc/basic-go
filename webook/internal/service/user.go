@@ -62,3 +62,8 @@ func (svc *UserService) UpdateUserProfile(ctx context.Context, u domain.User) er
 func (svc *UserService) GetUserProfile(ctx context.Context, id int64) (domain.User, error) {
 	return svc.repo.FindProfileById(ctx, id)
 }
+
+func (svc *UserService) Profile(ctx context.Context, id int64) (domain.User, error) {
+	u, err := svc.repo.FindById(ctx, id)
+	return u, err
+}
